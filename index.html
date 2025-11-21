@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Draft Deck — v20</title>
+<style>
+  :root{--muted:#cbd5e1;--accent:#6366f1;--good:#10b981}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:#000;color:#e6eef8;overflow:auto}
+  body::before{content:"";position:fixed;inset:0;background-image:url('https://static0.gamerantimages.com/wordpress/wp-content/uploads/2024/06/genshin-impact-spiral-abyss-background.jpg');background-size:cover;background-position:center;opacity:0.48;pointer-events:none;filter:brightness(0.45);z-index:0}
+  .wrap{position:relative;display:flex;gap:18px;padding:18px;z-index:1;align-items:start}
+  .center{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px}
+  #startDraftCenter{font-size:18px;padding:10px 16px;border-radius:10px;background:var(--good);color:#052016;border:none;cursor:pointer}
+  .center-row{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .three{display:flex;gap:18px;align-items:flex-start}
+  .card{width:320px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(4px)}
+  .art{height:420px;background:#0b1220;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .art img{width:100%;height:100%;object-fit:contain;object-position:center center;display:block}
+  .card .name{margin-top:8px;font-weight:700;color:#fff;transition:opacity 0.18s}
+  .card button{margin-top:10px;background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+  /* Right side */
+  .side{width:560px;flex:0 0 560px;display:flex;flex-direction:column;gap:12px}
+  .team-title{font-weight:800;color:#fff}
+  .slots{display:flex;gap:10px;align-items:center;justify-content:flex-start}
+  .slot{width:200px;aspect-ratio:320/420;border-radius:10px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  .slot img{width:100%;height:100%;object-fit:contain;display:block;border-radius:8px}
+  .notes{width:100%;height:120px;border-radius:8px;padding:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff;display:flex;align-items:center;justify-content:center}
+  .controls-row{display:flex;gap:8px;margin-top:8px}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;border-radius:8px;cursor:pointer}
+  .fade-in{opacity:0;transition:opacity 420ms ease}
+  .panel{position:fixed;left:18px;bottom:86px;width:420px;background:rgba(11,18,32,0.92);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);display:none;z-index:70}
+  .panel.open{display:block}
+  input,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff}
+  input[type='checkbox']{width:auto;height:auto;padding:0;margin:0 0 0 4px;border:none}
+  .menu-btn{width:56px;height:56px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-weight:700;cursor:pointer;position:fixed;left:18px;bottom:18px;z-index:80}
+  @media (max-width:1100px){ .side{width:320px;flex:0 0 320px} .card{width:260px} .art{height:320px} .slot{width:140px} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="center" role="main">
+      <div class="center-row" style="z-index:2">
+        <button id="startDraftCenter">Start Draft</button>
+        <label style="display:inline-flex;align-items:center;gap:8px;color:var(--muted)"><input id="blindDraft" type="checkbox">Blind Draft</label>
+      </div>
+
+      <div id="stageInfo" aria-live="polite" style="z-index:2">Team 1 • Pick 1/4</div>
+      <div class="three" id="three" aria-label="Draft cards" style="z-index:2"></div>
+    </div>
+
+    <aside class="side" aria-label="Teams" style="z-index:2">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0 0 6px 0;color:#fff">Team 1</h3>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="copyBtn" class="ghost">Copy names</button>
+          <button id="clearBtn" class="ghost" style="background:#ef4444;color:#fff;border-color:rgba(0,0,0,0.1)">Clear picks</button>
+          
+        </div>
+      </div>
+      <div class="slots" id="team1Slots" aria-label="Team 1 slots">
+        <div class="slot" data-i="0"></div>
+        <div class="slot" data-i="1"></div>
+        <div class="slot" data-i="2"></div>
+        <div class="slot" data-i="3"></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <div><h3 style="margin:0 0 6px 0;color:#fff">Team 2</h3></div>
+      </div>
+      <div class="slots" id="team2Slots" aria-label="Team 2 slots">
+        <div class="slot" data-i="0"></div>
+        <div class="slot" data-i="1"></div>
+        <div class="slot" data-i="2"></div>
+        <div class="slot" data-i="3"></div>
+      </div>
+
+      <h4 style="margin-top:8px;color:#fff">Patch Notes</h4>
+      <div id="notesBox" class="Patch Notes" aria-hidden="false">
+	  <h1><span style="text-decoration: underline;">Version 1.0 - Initial Release</span></h1>
+	  <h3>Latest Character - <strong>Nefer</strong> (6.1 / Luna II)</h3>
+	<p style="text-align: left;">Hi everyone! This is the earliest test version of Spiral Shuffle. Expect a&nbsp;<em>LOT</em> of things to simply be broken, as I am not a HTML programmer, nor a smart person in general. However, drafting IS functional, so give it a try!</p>
+	<p>&nbsp;</p>
+	<p>This application is in large part created by generative AI. If you have an issue with this, close the tab and touch some grass.&nbsp;</p>
+	<p><em>All images are copyrighted by their respective owners. I own nothing. This is a fan-based project for the funzies.</em></p>
+    </aside>
+  </div>
+
+
+  <button id="settingsBtn" class="menu-btn" aria-expanded="false" style="bottom:86px;">⚙</button>
+  <div class="panel" id="settingsPanel" aria-hidden="true" style="bottom:154px;max-height:320px;overflow:auto;">
+    <h4 style="margin:0 0 8px 0;color:#fff">Toggle Cards</h4>
+    <div id="settingsList" style="display:flex;flex-direction:column;gap:4px;"></div>
+    <div style="margin-top:8px;font-size:12px;color:#cbd5e1;">Turn cards on/off to include them in drafts. Changes are saved locally.</div>
+  </div>
+
+  <button id="menuBtn" class="menu-btn" aria-expanded="false">≡</button>
+  <div class="panel" id="panel" aria-hidden="true">
+    <h4 style="margin:0 0 8px 0;color:#fff">Deck (one per line name|frontUrl|backUrl)</h4>
+    <textarea id="deckText" rows="6" spellcheck="false" aria-label="Deck text"></textarea>
+
+    <h4 style="margin-top:8px;color:#fff">Add card (URLs)</h4>
+    <label>Name</label>
+    <input id="addName" placeholder="Card name" />
+    <label style="margin-top:6px">Front image URL</label>
+    <input id="addFront" placeholder="https://..." />
+    <label style="margin-top:6px">Back image URL</label>
+    <input id="addBack" placeholder="https://..." />
+
+    <div class="controls-row" style="margin-top:10px">
+      <button id="addBtn" class="ghost">Add card</button>
+      <button id="loadExample" class="ghost">Load example deck</button>
+      <button id="startMenu" class="ghost">Start Draft</button>
+    </div>
+    <div style="margin-top:10px;color:var(--muted);font-size:13px">Defaults load only when no saved deck or pasted deck text present.</div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Elements
+  const three = document.getElementById('three');
+  const stageInfo = document.getElementById('stageInfo');
+  const panel = document.getElementById('panel');
+  const menuBtn = document.getElementById('menuBtn');
+  const deckText = document.getElementById('deckText');
+  const addName = document.getElementById('addName');
+  const addFront = document.getElementById('addFront');
+  const addBack = document.getElementById('addBack');
+  const addBtn = document.getElementById('addBtn');
+  const loadExample = document.getElementById('loadExample');
+  const startDraftCenter = document.getElementById('startDraftCenter');
+  const startMenu = document.getElementById('startMenu');
+  const copyBtn = document.getElementById('copyBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const team1Slots = document.getElementById('team1Slots');
+  const team2Slots = document.getElementById('team2Slots');
+    const settingsBtn = document.getElementById('settingsBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const settingsList = document.getElementById('settingsList');
+const blindDraft = document.getElementById('blindDraft');
+  const notesBox = document.getElementById('notesBox');
+
+  // State
+  let master = [];
+  let deck = [];
+  let discard = [];
+  let visible = [];
+  let packPicks = [];
+  let allPicks = [];
+  let packNumber = 1;
+
+  function uid(){ return 'c_' + Math.random().toString(36).slice(2,9); }
+
+  function defaultDeckArray(){
+    return [
+      "Albedo|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/albedo.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Chiori|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/chiori.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Gorou|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/gorou.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Itto|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/itto.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Kachina|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/kachina.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Navia|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/navia.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Ningguang|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/ningguang.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Noelle|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/noelle.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Xilonen|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/xilonen.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Yun Jin|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/yun-yin.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Zhongli|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/zhongli.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Chasca|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/chasca.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Faruzan|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/faruzan.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Ifa|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/ifa.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Jean|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/jean.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Kazuha|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/kazuha.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Lan Yan|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/lan-yan.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Lynette|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/lynette.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Sayu|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/sayu.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Heizou|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/heizou.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Sucrose|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/sucrose.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Venti|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/venti.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Wanderer|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/wanderer.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Xianyun|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/xianyun.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Xiao|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/xiao.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Mizuki|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/mizuki.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Charlotte|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/charlotte.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Chongyun|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/chongyun.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Citlali|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/citlali.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Diona|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/diona.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Escoffier|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/Eschoffier.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Eula|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/eula.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Freminet|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/freminet.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Ganyu|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/ganyu.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Kaeya|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/kaeya.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Ayaka|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/ayaka.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Layla|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/layla.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Mika|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/mika.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Qiqi|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/qiqi.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Rosaria|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/rosaria.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Shenhe|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/shenhe.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Skirk|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/Skirk.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Wriothesley|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/cryo/wriothesley.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/cryo.png?raw=true",
+      "Amber|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/amber.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Arlecchino|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/arlecchino.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Bennet|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/bennet.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Chevreuse|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/chevreuse.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Dehya|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/dehya.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Diluc|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/diluc.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Gaming|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/Gaming.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Hu Tao|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/hu-tao.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Klee|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/klee.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Lyney|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/lyney.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Mavuika|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/mavuika.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Thoma|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/thoma.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Xiangling|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/xiangling.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Xinyan|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/xinyan.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Yanfei|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/yanfei.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Yoimiya|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/pyro/yoimiya.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/pyro.png?raw=true",
+      "Aino|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/aino.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Barbara|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/barbara.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Candace|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/candace.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Dahlia|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/Dahlia.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Furina|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/furina.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Ayato|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/ayato.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Mona|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/mona.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Mualani|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/mualani.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Neuvillette|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/neuvilette.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Nilou|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/nilou.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Kokomi|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/kokomi.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Sigewinne|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/sigewienne.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Childe (Tartaglia)|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/tartaglia.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Xingqiu|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/tartaglia.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Yelan|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/hydro/yelan.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/hydro.png?raw=true",
+      "Beidou|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/beidou.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Clorinde|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/clorinde.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Cyno|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/cyno.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Dori|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/dori.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Fischl|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/fischl.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Flins|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/flins.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Iansan|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/iansan.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Ineffa|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/Ineffa.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Keqing|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/keqing.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Kujou Sara|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/kujou-sara.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Kuki Shinobu|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/kuki-shinobu.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Lisa|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/lisa.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Ororon|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/Ororon.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Raiden Shogun|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/raiden-shogun.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Razor|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/razor.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Sethos|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/sethos.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Varesa|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/varesa.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Yae Miko|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/electro/yae-miko.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/electro.png?raw=true",
+      "Alhaitham|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/alhaitham.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Baizhu|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/baizhu.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Collei|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/collei.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Emilie|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/emilie.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Kaveh|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/kaveh.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Kinich|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/kinich.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Kirara|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/kirara.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Lauma|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/lauma.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Nahida|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/nahida.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Nefer|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/nefer.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Tighnari|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/tighnari.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true",
+      "Yaoyao|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/dendro/yaoyao.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/dendro.png?raw=true"
+    ];
+  }
+  function parseDeckText(text){
+    return text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
+      const parts = line.split('|').map(p=>p.trim());
+      return { id: uid(), name: parts[0]||'Untitled', front: parts[1]||null, back: parts[2]||null, enabled:true };
+    });
+  }
+
+  function writeMasterToText(){
+    deckText.value = master.map(c=>[c.name,c.front||'',c.back||''].join('|')).join('\n');
+  }
+
+
+  
+  
+  function renderSettings(){
+    if(!settingsList) return;
+    settingsList.innerHTML = '';
+    (master || []).forEach(function(card, index){
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.gap = '8px';
+      row.style.padding = '4px 0';
+
+      const label = document.createElement('div');
+      const name = card && card.name ? card.name : ('Card ' + (index + 1));
+      label.textContent = (index + 1) + '. ' + name;
+      label.style.fontSize = '13px';
+      label.style.color = '#e5e7eb';
+      label.style.flex = '1 1 auto';
+      label.style.overflow = 'hidden';
+      label.style.textOverflow = 'ellipsis';
+      label.style.whiteSpace = 'nowrap';
+
+      const toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.checked = card.enabled !== false;
+      toggle.style.flex = '0 0 auto';
+      toggle.addEventListener('change', function(){
+        card.enabled = !!toggle.checked;
+        try{
+          localStorage.setItem('draft.master', JSON.stringify(master));
+        }catch(e){}
+      });
+
+      row.appendChild(label);
+      row.appendChild(toggle);
+      settingsList.appendChild(row);
+    });
+  }
+
+
+  function shuffleArray(a){ const arr=a.slice(); for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]] } return arr; }
+
+  function renderThree(){
+    three.innerHTML = '';
+    if(visible.length === 0){ three.textContent = 'No active pack — press Start Draft'; return; }
+    const isBlind = blindDraft.checked;
+    visible.forEach(c=>{
+      const el = document.createElement('div'); el.className='card';
+      const art = document.createElement('div'); art.className='art';
+      const img = document.createElement('img');
+      img.alt = c.name;
+      if(isBlind && c.back) img.src = c.back;
+      else img.src = c.front || c.back || '';
+      art.appendChild(img);
+      const name = document.createElement('div'); name.className='name'; name.textContent = c.name;
+      if(isBlind) name.style.opacity = '0';
+      const btn = document.createElement('button'); btn.textContent = 'Pick';
+      btn.addEventListener('click', ()=> pickCard(c, img));
+      el.appendChild(art); el.appendChild(name); el.appendChild(btn);
+      three.appendChild(el);
+    });
+    updateStageInfo();
+  }
+
+  function updateStageInfo(){
+    // Team depends on where the NEXT pick will go:
+    // 0–3 picks => Team 1, 4–7 picks => Team 2
+    var total = allPicks.length || 0;
+    var teamNum = total < 4 ? 1 : 2;
+    var pickInTeam = total < 4 ? total : total - 4;
+    stageInfo.textContent = `Team ${teamNum} • Pick ${pickInTeam}/4`;
+  }
+
+  function buildWorkingDeck(){
+    deck = master.filter(c=>c.enabled).map(c=>({ ...c, id: uid() }));
+    deck = shuffleArray(deck);
+    discard = [];
+    visible = [];
+    packPicks = [];
+    allPicks = [];
+    packNumber = 1;
+    clearSlots();
+    renderThree();
+    renderPicks();
+  }
+
+  function resetAll(){
+    allPicks = [];
+    packPicks = [];
+    packNumber = 1;
+    deck = [];
+    discard = [];
+    visible = [];
+    [...team1Slots.children].forEach(s=>s.innerHTML='');
+    [...team2Slots.children].forEach(s=>s.innerHTML='');
+    clearSlots();
+    renderPicks();
+    renderThree();
+    try{ localStorage.removeItem('draft.working'); }catch(e){}
+  }
+
+  function startDraft(){
+    resetAll();
+    const saved = localStorage.getItem('draft.master');
+    if(!saved && (!deckText.value || deckText.value.trim()==='')){
+      master = parseDeckText(defaultDeckArray().join('\n'));
+      localStorage.setItem('draft.master', JSON.stringify(master));
+    } else if(!saved && deckText.value && deckText.value.trim()!==''){
+      master = parseDeckText(deckText.value);
+      localStorage.setItem('draft.master', JSON.stringify(master));
+    } else if(saved){
+      try{ master = JSON.parse(saved); }catch(e){ master = parseDeckText(defaultDeckArray().join('\n')); }
+    }
+    writeMasterToText();
+    buildWorkingDeck();
+    if(deck.length < 8){ alert('Need at least 8 cards to draft'); return; }
+    drawThree();
+  }
+
+  function drawThree(){
+    if(deck.length < 3){ deck = shuffleArray(deck.concat(discard)); discard = []; }
+    visible = deck.splice(0,3);
+    renderThree();
+  }
+
+  async function proceedPick(card, srcImg){
+    if(allPicks.length >= 8) return;
+    // capture srcUrl immediately
+    const srcUrl = (srcImg && srcImg.src) ? srcImg.src : (card.front || card.back || '');
+    packPicks.push(card);
+    allPicks.push(card);
+    const others = visible.filter(x=>x.id !== card.id);
+    discard = discard.concat(others);
+
+    const targetIndex = allPicks.length - 1;
+      // use direct children indexing to avoid selector bugs
+      let slot = null;
+      if(targetIndex < 4){
+        const idx = targetIndex;
+        slot = team1Slots.children[idx] || null;
+      } else {
+        const idx = targetIndex - 4;
+        slot = team2Slots.children[idx] || null;
+      }
+// perform fade-in insertion
+    await animateFadeInToSlot(srcUrl, slot, card);
+
+    visible = [];
+    renderPicks();
+
+    if(packPicks.length >= 4){
+      if(packNumber >= 2){ visible=[]; renderThree(); setTimeout(()=>alert('Draft complete — 8 picks'),300); return; }
+      else { packNumber++; packPicks = []; setTimeout(drawThree, 420); return; }
+    }
+    setTimeout(drawThree, 380);
+  }
+
+  function revealCardFront(srcImg, frontUrl, cb){
+    if(!srcImg || !srcImg.getBoundingClientRect){ cb(); return; }
+    const rect = srcImg.getBoundingClientRect();
+    const overlay = document.createElement('img');
+    overlay.src = srcImg.src || '';
+    overlay.style.position = 'fixed';
+    overlay.style.left = rect.left + 'px';
+    overlay.style.top = rect.top + 'px';
+    overlay.style.width = rect.width + 'px';
+    overlay.style.height = rect.height + 'px';
+    overlay.style.transformOrigin = 'center center';
+    overlay.style.backfaceVisibility = 'hidden';
+    overlay.style.transition = 'transform 220ms ease';
+    overlay.style.zIndex = 9999;
+    document.body.appendChild(overlay);
+
+    overlay.style.transform = 'perspective(800px) rotateY(90deg)';
+    setTimeout(()=>{
+      overlay.src = frontUrl;
+      try{ if(srcImg) srcImg.src = frontUrl; }catch(e){}
+      try{
+        const cardEl = srcImg.closest('.card');
+        if(cardEl){
+          const nameEl = cardEl.querySelector('.name');
+          if(nameEl) nameEl.style.opacity = '1';
+        }
+      }catch(e){}
+      overlay.style.transition = 'transform 220ms ease';
+      overlay.style.transform = 'perspective(800px) rotateY(0deg)';
+      overlay.addEventListener('transitionend', ()=>{
+        if(overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        setTimeout(()=>{ cb(); }, 1900);
+      }, { once: true });
+    }, 240);
+  }
+
+  function pickCard(card, srcImg){
+    if(allPicks.length >= 8) return;
+    if(blindDraft.checked && card.front){
+      revealCardFront(srcImg, card.front, ()=> proceedPick(card, srcImg));
+    } else {
+      proceedPick(card, srcImg);
+    }
+  }
+
+  function animateFadeInToSlot(srcUrl, slotEl, card){
+    return new Promise((resolve)=>{
+      if(!slotEl){ resolve(); return; }
+      try{
+        slotEl.innerHTML = '';
+        // container to hold image and name below
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'flex-start';
+        container.style.height = '100%';
+        container.style.width = '100%';
+        // image area: take most space
+        const img = document.createElement('img');
+        img.src = srcUrl || (card.front || card.back || '');
+        img.className = 'fade-in';
+        img.style.width = '100%';
+        img.style.height = 'calc(100% - 28px)'; // leave space for name
+        img.style.objectFit = 'contain';
+        img.style.display = 'block';
+        img.style.borderRadius = '8px';
+        img.style.opacity = '0';
+        // name element under the image
+        const nameDiv = document.createElement('div');
+        nameDiv.textContent = card.name || '';
+        nameDiv.style.marginTop = '6px';
+        nameDiv.style.fontSize = '14px';
+        nameDiv.style.color = '#fff';
+        nameDiv.style.textAlign = 'center';
+        nameDiv.style.width = '100%';
+        nameDiv.style.height = '22px';
+        nameDiv.style.overflow = 'hidden';
+        nameDiv.style.textOverflow = 'ellipsis';
+        nameDiv.style.whiteSpace = 'nowrap';
+        container.appendChild(img);
+        container.appendChild(nameDiv);
+        slotEl.appendChild(container);
+        // force frame then start transition
+        requestAnimationFrame(()=>{ img.style.opacity = '1'; });
+        setTimeout(()=>{ resolve(); }, 480);
+      }catch(e){
+        resolve();
+      }
+    });
+  }
+
+  function renderPicks(){
+    // no picked list; names copy pulls from allPicks
+    updateStageInfo();
+  }
+
+  function clearSlots(){
+    [...team1Slots.children].forEach((s,i)=>{ s.innerHTML = ''; s.setAttribute('data-i', i); s.style.visibility = 'visible'; });
+    [...team2Slots.children].forEach((s,i)=>{ s.innerHTML = ''; s.setAttribute('data-i', i); s.style.visibility = 'visible'; });
+  }
+
+  // UI wiring
+  menuBtn.addEventListener('click', ()=>{ const open = panel.classList.toggle('open'); panel.setAttribute('aria-hidden', String(!open)); menuBtn.setAttribute('aria-expanded', String(open)); });
+
+  if(settingsBtn && settingsPanel){
+    settingsBtn.addEventListener('click', ()=>{
+      const open = settingsPanel.classList.toggle('open');
+      settingsPanel.setAttribute('aria-hidden', String(!open));
+      settingsBtn.setAttribute('aria-expanded', String(open));
+      if(open){ renderSettings(); }
+    });
+  }
+
+  addBtn.addEventListener('click', ()=>{
+    const name = addName.value.trim()||'Card';
+    const front = addFront.value.trim()||null;
+    const back = addBack.value.trim()||null;
+    if(!front && !back){ alert('Provide at least front or back URL'); return; }
+    master.push({ id: uid(), name, front, back, enabled:true });
+    writeMasterToText();
+    localStorage.setItem('draft.master', JSON.stringify(master));
+    renderThree();
+    addName.value=''; addFront.value=''; addBack.value='';
+    alert('Added');
+  });
+
+  loadExample.addEventListener('click', ()=>{
+    deckText.value = defaultDeckArray().join('\n');
+    master = parseDeckText(deckText.value);
+    writeMasterToText();
+    localStorage.setItem('draft.master', JSON.stringify(master));
+    renderThree();
+    alert('Loaded example');
+  });
+
+  startDraftCenter.addEventListener('click', startDraft);
+  startMenu.addEventListener('click', startDraft);
+copyBtn.addEventListener('click', ()=>{
+    const text = allPicks.map(p=>p.name).join('\n');
+    if(!text){ alert('No picks'); return; }
+    navigator.clipboard.writeText(text).then(()=>alert('Copied')).catch(()=>alert('Copy failed'));
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    if(confirm('Clear picks?')){ resetAll(); alert('Cleared'); }
+  });
+
+  // initial load
+  (function initialLoad(){
+    try{
+      const saved = localStorage.getItem('draft.master');
+      const textVal = (deckText.value || '').trim();
+      if(saved){
+        master = JSON.parse(saved);
+      } else if(textVal){
+        master = parseDeckText(textVal);
+        localStorage.setItem('draft.master', JSON.stringify(master));
+      } else {
+        master = parseDeckText(defaultDeckArray().join('\n'));
+        localStorage.setItem('draft.master', JSON.stringify(master));
+        writeMasterToText();
+      }
+    }catch(e){
+      master = parseDeckText(defaultDeckArray().join('\n'));
+      writeMasterToText();
+      localStorage.setItem('draft.master', JSON.stringify(master));
+    }
+    clearSlots();
+    renderThree();
+    renderSettings();
+  })();
+
+  // expose debug
+  window._draft = { master, deck, allPicks };
+}); // DOMContentLoaded
+</script>
+</body>
+</html>
