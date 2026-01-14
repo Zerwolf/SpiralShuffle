@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Spiral Shuffle - v1.1</title>
+<title>Spiral Shuffle - v1.2</title>
 <style>
   :root{--muted:#cbd5e1;--accent:#6366f1;--good:#10b981}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:#000;color:#e6eef8;overflow:auto}
@@ -11,7 +11,11 @@
   .wrap{position:relative;display:flex;gap:18px;padding:18px;z-index:1;align-items:start}
   .center{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px}
   #startDraftCenter{font-size:18px;padding:10px 16px;border-radius:10px;background:var(--good);color:#052016;border:none;cursor:pointer}
-  .center-row{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .center-row{ display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  width:100%;}
   .three{display:flex;gap:18px;align-items:flex-start}
   .card{width:320px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(4px)}
   .art{height:420px;background:#0b1220;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
@@ -34,6 +38,7 @@
   input[type='checkbox']{width:auto;height:auto;padding:0;margin:0 0 0 4px;border:none}
   .menu-btn{width:56px;height:56px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-weight:700;cursor:pointer;position:fixed;left:18px;bottom:18px;z-index:80}
   @media (max-width:1100px){ .side{width:320px;flex:0 0 320px} .card{width:260px} .art{height:320px} .slot{width:140px} }
+  body.last-stand::before{ filter: brightness(0.45) hue-rotate(110deg) saturate(1.6);}
 </style>
 </head>
 <body>
@@ -41,13 +46,32 @@
     <div class="center" role="main">
       <div class="center-row" style="z-index:2">
         <button id="startDraftCenter">Start Draft</button>
-        <label style="display:inline-flex;align-items:center;gap:8px;color:var(--muted)"><input id="blindDraft" type="checkbox">Blind Draft</label>
-      </div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <label style="display:inline-flex;align-items:center;gap:8px;color:var(--muted)">
+          <input id="blindDraft" type="checkbox">Blind Draft
+        </label>
+
+  <label style="display:inline-flex;align-items:center;gap:8px;color:#fbbf24">
+    <input id="lastStandToggle" type="checkbox">Last Stand Mode
+  </label>
+
+  <div id="discardInfo" style="color:#ef4444;font-size:14px;display:none">
+    Discarded: <strong id="discardCount">0</strong>
+  </div>
+
+  <button id="resetLastStand" class="ghost" style="font-size:13px">
+    Reset Last Stand
+  </button>
+</div>
+
+        <div id="rerollInfo" style="color:#cbd5e1;font-size:14px;margin-top:4px">
+          Re-Rolls left: <strong id="rerollCount">2</strong>
+          </div>
 
       <div id="stageInfo" aria-live="polite" style="z-index:2">Team 1 • Pick 1/4</div>
       <div class="three" id="three" aria-label="Draft cards" style="z-index:2"></div>
     </div>
-
+</div>
     <aside class="side" aria-label="Teams" style="z-index:2">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
@@ -78,12 +102,12 @@
 
       <h4 style="margin-top:8px;color:#fff">Patch Notes</h4>
       <div id="notesBox" class="Patch Notes" aria-hidden="false">
-	  <h1><span style="text-decoration: underline;">Version: Luna IV (6.3)</span></h1>
-	  <h3>Latest Character - <strong>Durin</strong></h3>
-	<p style="text-align: left;"> Columbina has been added to the shuffle. Aino, Ineffa & Mika's card art has been updated. Good luck, have fun!</p>
+	  <h1><span style="text-decoration: underline;">Version: Luna V (6.4)</span></h1>
+	  <h3>Latest Character - <strong>Columbina</strong></h3>
+	<p style="text-align: left;"> Columbina has been added to the shuffle. Aino, Ineffa & Mika's card art has been updated. Re-Rolling and "Last Stand" mode has also been added. Good luck, have fun!</p>
 	<p>&nbsp;</p>
-	<p>This application is in large part created by generative AI. If you have an issue with this, close the tab and touch some grass.&nbsp;</p>
-	<p><em>All images are copyrighted by their respective owners. I own nothing. This is a fan-based project for the funzies.</em></p>
+	<p>This application is in large part created by generative AI. If you have an issue with this, then do not use it!&nbsp;</p>
+	<p><em>All images are copyrighted by their respective owners. I own nothing. This is a fan-based project for the YouTube channel Zerwolf.</em></p>
     </aside>
   </div>
 
@@ -135,11 +159,28 @@ document.addEventListener('DOMContentLoaded', ()=>{
   const clearBtn = document.getElementById('clearBtn');
   const team1Slots = document.getElementById('team1Slots');
   const team2Slots = document.getElementById('team2Slots');
-    const settingsBtn = document.getElementById('settingsBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
   const settingsPanel = document.getElementById('settingsPanel');
   const settingsList = document.getElementById('settingsList');
-const blindDraft = document.getElementById('blindDraft');
+  const blindDraft = document.getElementById('blindDraft');
+  const rerollCountEl = document.getElementById('rerollCount');
   const notesBox = document.getElementById('notesBox');
+  const MAX_REROLLS = 3;
+  const lastStandToggle = document.getElementById('lastStandToggle');
+  const resetLastStandBtn = document.getElementById('resetLastStand');
+  const discardInfo = document.getElementById('discardInfo');
+  const discardCountEl = document.getElementById('discardCount');
+
+function updateDiscardUI(){
+  if(!discardInfo || !discardCountEl) return;
+
+  if(lastStandMode){
+    discardInfo.style.display = 'block';
+    discardCountEl.textContent = lastStandExiled.length;
+  } else {
+    discardInfo.style.display = 'none';
+  }
+}
 
   // State
   let master = [];
@@ -149,6 +190,9 @@ const blindDraft = document.getElementById('blindDraft');
   let packPicks = [];
   let allPicks = [];
   let packNumber = 1;
+  let rerollsLeft = 3;
+  let lastStandMode = false;
+  let lastStandExiled = []; // permanently removed until reset
 
   function uid(){ return 'c_' + Math.random().toString(36).slice(2,9); }
 
@@ -264,18 +308,42 @@ const blindDraft = document.getElementById('blindDraft');
     ];
   }
   function parseDeckText(text){
-    return text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
+  return text
+    .split(/\r?\n/)
+    .map(l=>l.trim())
+    .filter(Boolean)
+    .map(line=>{
       const parts = line.split('|').map(p=>p.trim());
-      return { id: uid(), name: parts[0]||'Untitled', front: parts[1]||null, back: parts[2]||null, enabled:true };
+      return {
+        id: parts[3] || uid(), // ← preserve ID if present
+        name: parts[0] || 'Untitled',
+        front: parts[1] || null,
+        back: parts[2] || null,
+        enabled: true
+      };
     });
-  }
+}
 
   function writeMasterToText(){
-    deckText.value = master.map(c=>[c.name,c.front||'',c.back||''].join('|')).join('\n');
+    deckText.value = master.map(c=>[c.name, c.front||'', c.back||'', c.id].join('|')).join('\n');
   }
 
+function saveLastStand(){
+  localStorage.setItem('draft.lastStand', JSON.stringify({
+    enabled: lastStandMode,
+    exiled: lastStandExiled
+  }));
+}
 
-  
+function loadLastStand(){
+  try{
+    const raw = localStorage.getItem('draft.lastStand');
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    lastStandMode = !!data.enabled;
+    lastStandExiled = Array.isArray(data.exiled) ? data.exiled : [];
+  }catch(e){}
+}
   
   function renderSettings(){
     if(!settingsList) return;
@@ -318,27 +386,57 @@ const blindDraft = document.getElementById('blindDraft');
 
   function shuffleArray(a){ const arr=a.slice(); for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]] } return arr; }
 
-  function renderThree(){
-    three.innerHTML = '';
-    if(visible.length === 0){ three.textContent = 'No active pack — press Start Draft'; return; }
-    const isBlind = blindDraft.checked;
-    visible.forEach(c=>{
-      const el = document.createElement('div'); el.className='card';
-      const art = document.createElement('div'); art.className='art';
-      const img = document.createElement('img');
-      img.alt = c.name;
-      if(isBlind && c.back) img.src = c.back;
-      else img.src = c.front || c.back || '';
-      art.appendChild(img);
-      const name = document.createElement('div'); name.className='name'; name.textContent = c.name;
-      if(isBlind) name.style.opacity = '0';
-      const btn = document.createElement('button'); btn.textContent = 'Pick';
-      btn.addEventListener('click', ()=> pickCard(c, img));
-      el.appendChild(art); el.appendChild(name); el.appendChild(btn);
-      three.appendChild(el);
-    });
-    updateStageInfo();
+function renderThree(){
+  three.innerHTML = '';
+  if(visible.length === 0){
+    three.textContent = 'No active pack — press Start Draft';
+    return;
   }
+
+  const isBlind = blindDraft.checked;
+
+  visible.forEach(c=>{
+    const el = document.createElement('div');
+    el.className = 'card';
+
+    const art = document.createElement('div');
+    art.className = 'art';
+
+    const img = document.createElement('img');
+    img.alt = c.name;
+    img.src = (isBlind && c.back) ? c.back : (c.front || c.back || '');
+    art.appendChild(img);
+
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = c.name;
+    if(isBlind) name.style.opacity = '0';
+
+    // Pick button
+    const pickBtn = document.createElement('button');
+    pickBtn.textContent = 'Pick';
+    pickBtn.addEventListener('click', ()=> pickCard(c, img));
+
+    // ✅ Re-Roll button (CORRECT scope)
+    const rerollBtn = document.createElement('button');
+    rerollBtn.textContent = 'Re-Roll';
+    rerollBtn.style.marginLeft = '6px';
+    rerollBtn.disabled = rerollsLeft <= 0;
+    rerollBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      rerollCard(c);
+    });
+
+    el.appendChild(art);
+    el.appendChild(name);
+    el.appendChild(pickBtn);
+    el.appendChild(rerollBtn);
+
+    three.appendChild(el);
+  });
+
+  updateStageInfo();
+}
 
   function updateStageInfo(){
     // Team depends on where the NEXT pick will go:
@@ -349,8 +447,17 @@ const blindDraft = document.getElementById('blindDraft');
     stageInfo.textContent = `Team ${teamNum} • Pick ${pickInTeam}/4`;
   }
 
+  function updateRerollUI(){
+  if(rerollCountEl){
+    rerollCountEl.textContent = rerollsLeft;
+  }
+}
+
   function buildWorkingDeck(){
-    deck = master.filter(c=>c.enabled).map(c=>({ ...c, id: uid() }));
+    deck = master
+      .filter(c=>c.enabled)
+      .filter(c=>!lastStandExiled.includes(c.id))
+      .map(c=>({ ...c }));
     deck = shuffleArray(deck);
     discard = [];
     visible = [];
@@ -375,25 +482,50 @@ const blindDraft = document.getElementById('blindDraft');
     renderPicks();
     renderThree();
     try{ localStorage.removeItem('draft.working'); }catch(e){}
+    rerollsLeft = MAX_REROLLS;
+    updateRerollUI();
   }
 
   function startDraft(){
-    resetAll();
-    const saved = localStorage.getItem('draft.master');
-    if(!saved && (!deckText.value || deckText.value.trim()==='')){
-      master = parseDeckText(defaultDeckArray().join('\n'));
-      localStorage.setItem('draft.master', JSON.stringify(master));
-    } else if(!saved && deckText.value && deckText.value.trim()!==''){
-      master = parseDeckText(deckText.value);
-      localStorage.setItem('draft.master', JSON.stringify(master));
-    } else if(saved){
-      try{ master = JSON.parse(saved); }catch(e){ master = parseDeckText(defaultDeckArray().join('\n')); }
-    }
-    writeMasterToText();
-    buildWorkingDeck();
-    if(deck.length < 8){ alert('Need at least 8 cards to draft'); return; }
-    drawThree();
+  // Always clear visible UI state
+  allPicks = [];
+  packPicks = [];
+  packNumber = 1;
+  visible = [];
+  discard = [];
+
+  clearSlots();
+  renderThree();
+
+  // Load master as usual
+  const saved = localStorage.getItem('draft.master');
+  if(!saved && (!deckText.value || deckText.value.trim()==='')){
+    master = parseDeckText(defaultDeckArray().join('\n'));
+    localStorage.setItem('draft.master', JSON.stringify(master));
+  } else if(!saved && deckText.value && deckText.value.trim()!==''){
+    master = parseDeckText(deckText.value);
+    localStorage.setItem('draft.master', JSON.stringify(master));
+  } else if(saved){
+    try{ master = JSON.parse(saved); }
+    catch(e){ master = parseDeckText(defaultDeckArray().join('\n')); }
   }
+
+  writeMasterToText();
+
+  // 🔴 IMPORTANT: do NOT clear lastStandExiled here
+  buildWorkingDeck();
+
+  rerollsLeft = MAX_REROLLS;
+  updateRerollUI();
+  updateDiscardUI();
+
+  if(deck.length < 3){
+    alert('Not enough cards remaining to draft.');
+    return;
+  }
+
+  drawThree();
+}
 
   function drawThree(){
     if(deck.length < 3){ deck = shuffleArray(deck.concat(discard)); discard = []; }
@@ -408,7 +540,16 @@ const blindDraft = document.getElementById('blindDraft');
     packPicks.push(card);
     allPicks.push(card);
     const others = visible.filter(x=>x.id !== card.id);
-    discard = discard.concat(others);
+
+if(lastStandMode){
+  lastStandExiled.push(card.id);                 // picked
+  lastStandExiled.push(...others.map(o=>o.id));  // unpicked
+} else {
+  discard = discard.concat(others);
+}
+
+saveLastStand();
+updateDiscardUI();
 
     const targetIndex = allPicks.length - 1;
       // use direct children indexing to avoid selector bugs
@@ -477,6 +618,38 @@ const blindDraft = document.getElementById('blindDraft');
       proceedPick(card, srcImg);
     }
   }
+
+function updateLastStandVisual(){
+  document.body.classList.toggle('last-stand', lastStandMode);
+}
+
+function rerollCard(card){
+  if(rerollsLeft <= 0) return;
+
+  rerollsLeft--;
+  updateRerollUI();
+
+  const index = visible.findIndex(v => v.id === card.id);
+  if(index === -1) return;
+
+  // Remove selected card from visible
+  visible.splice(index, 1);
+
+  // Put it back into the deck and reshuffle
+  deck.push(card);
+  deck = shuffleArray(deck);
+
+  // Draw replacement
+  if(deck.length === 0){
+    deck = shuffleArray(deck.concat(discard));
+    discard = [];
+  }
+
+  const replacement = deck.shift();
+  visible.splice(index, 0, replacement);
+
+  renderThree();
+}
 
   function animateFadeInToSlot(srcUrl, slotEl, card){
     return new Promise((resolve)=>{
@@ -583,6 +756,33 @@ copyBtn.addEventListener('click', ()=>{
 
   // initial load
   (function initialLoad(){
+    loadLastStand();
+    lastStandToggle.checked = lastStandMode;
+    lastStandToggle.addEventListener('change', ()=>{
+  lastStandMode = lastStandToggle.checked;
+
+  if(lastStandMode){
+    // starting a NEW Last Stand run
+    lastStandExiled = [];
+  } else {
+    // leaving Last Stand → restore full pool
+    lastStandExiled = [];
+  }
+
+  saveLastStand();
+  updateDiscardUI();
+  updateLastStandVisual();
+});
+
+resetLastStandBtn.addEventListener('click', ()=>{
+  if(confirm('Reset Last Stand pool and restore all cards?')){
+    lastStandExiled = [];
+    saveLastStand();
+    updateDiscardUI();
+    updateLastStandVisual();
+    alert('Last Stand has been reset.');
+  }
+});
     try{
       const saved = localStorage.getItem('draft.master');
       const textVal = (deckText.value || '').trim();
