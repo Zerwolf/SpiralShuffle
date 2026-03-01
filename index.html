@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Spiral Shuffle - v1.2</title>
+<title>Spiral Shuffle - v1.3</title>
 <style>
   :root{--muted:#cbd5e1;--accent:#6366f1;--good:#10b981}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:#000;color:#e6eef8;overflow:auto}
@@ -103,8 +103,8 @@
       <h4 style="margin-top:8px;color:#fff">Patch Notes</h4>
       <div id="notesBox" class="Patch Notes" aria-hidden="false">
 	  <h1><span style="text-decoration: underline;">Version: Luna V (6.4)</span></h1>
-	  <h3>Latest Character - <strong>Columbina</strong></h3>
-	<p style="text-align: left;"> Columbina has been added to the shuffle. Aino, Ineffa & Mika's card art has been updated. Re-Rolling and "Last Stand" mode has also been added. Good luck, have fun!</p>
+	  <h3>Latest Character - <strong>Varka</strong></h3>
+	<p style="text-align: left;"> Varka, Zibai and Illuga have been added to thhe shuffle! Official art for Ororon and Skirk has been added. Good luck, have fun!</p>
 	<p>&nbsp;</p>
 	<p>This application is in large part created by generative AI. If you have an issue with this, then do not use it!&nbsp;</p>
 	<p><em>All images are copyrighted by their respective owners. I own nothing. This is a fan-based project for the YouTube channel Zerwolf.</em></p>
@@ -201,6 +201,7 @@ function updateDiscardUI(){
       "Albedo|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/albedo.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Chiori|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/chiori.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Gorou|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/gorou.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Illuga|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/illuga.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Itto|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/itto.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Kachina|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/kachina.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Navia|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/navia.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
@@ -209,6 +210,7 @@ function updateDiscardUI(){
       "Xilonen|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/xilonen.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Yun Jin|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/yun-yin.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Zhongli|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/zhongli.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
+      "Zibai|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/geo/zibai.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/geo.png?raw=true",
       "Chasca|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/chasca.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
       "Faruzan|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/faruzan.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
       "Ifa|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/ifa.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
@@ -220,6 +222,7 @@ function updateDiscardUI(){
       "Sayu|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/sayu.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
       "Heizou|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/heizou.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
       "Sucrose|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/sucrose.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
+      "Varka|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/varka.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
       "Venti|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/venti.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
       "Wanderer|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/wanderer.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
       "Xianyun|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/anemo/xianyun.png?raw=true|https://github.com/Zerwolf/SpiralShuffle/blob/main/cards/card%20backs/anemo.png?raw=true",
